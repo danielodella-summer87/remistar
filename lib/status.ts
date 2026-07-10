@@ -11,6 +11,8 @@ import type {
   AlertStatus,
   OpportunityStage,
   CollectionType,
+  VehicleOwnership,
+  PaymentScheme,
 } from "@/lib/types";
 
 export type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "brand";
@@ -185,6 +187,24 @@ export const expenseCategoryLabels: Record<string, string> = {
   reparacion_menor: "Reparación menor",
   compra_urgente: "Compra urgente",
   otro: "Otro",
+};
+
+export const vehicleCategoryLabels: Record<string, string> = {
+  sedan_ejecutivo: "Sedán ejecutivo",
+  van: "Van",
+  suv: "SUV",
+  minibus: "Minibús",
+};
+
+export const vehicleOwnershipLabels: Record<VehicleOwnership, string> = {
+  propio: "Vehículo propio",
+  remistar: "Vehículo de Remistar",
+};
+
+export const paymentSchemeLabels: Record<PaymentScheme, string> = {
+  comision: "Comisión por servicio",
+  jornal: "Jornal",
+  tarifa_fija: "Tarifa fija",
 };
 
 export const alertModuleLabels: Record<string, string> = {

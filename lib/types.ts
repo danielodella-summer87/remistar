@@ -143,6 +143,11 @@ export interface Service {
   driverPayoutAmount?: number;
   estimatedCost: number;
   notes?: string;
+  stops?: string[];
+  passengerCount?: number;
+  luggageNotes?: string;
+  paymentMethod?: string;
+  specialInstructions?: string;
   isDemo: true;
 }
 
@@ -275,6 +280,10 @@ export interface ExpenseReport {
   possibleDuplicate?: boolean;
   notes?: string;
   settlementId?: ID;
+  currency?: "UYU" | "USD";
+  provider?: string;
+  paymentMethod?: string;
+  reason?: string;
   isDemo: true;
 }
 
@@ -375,6 +384,79 @@ export interface Alert {
   suggestedAction: string;
   responsible: string;
   createdAt: string;
+  isDemo: true;
+}
+
+// ---------------------------------------------------------------------------
+// Portal del chofer (demo — estado local, sin backend)
+// ---------------------------------------------------------------------------
+
+/** Alias semántico: la disponibilidad que el chofer declara es el mismo dominio que DriverStatus. */
+export type DriverAvailabilityStatus = DriverStatus;
+
+/**
+ * Estado operativo de un servicio visto por el chofer (distinto del ServiceStatus administrativo).
+ * Se guarda como overlay en localStorage, nunca sobrescribe el Service.status real.
+ */
+export type DriverServiceStatus =
+  | "asignado"
+  | "pendiente_aceptacion"
+  | "aceptado"
+  | "rechazado"
+  | "en_camino"
+  | "en_origen"
+  | "pasajero_a_bordo"
+  | "en_viaje"
+  | "finalizado"
+  | "pendiente_rendicion"
+  | "cerrado";
+
+export interface DriverServiceHistoryEntry {
+  status: DriverServiceStatus;
+  at: string;
+  note?: string;
+}
+
+export type DriverIncidentType =
+  | "mecanico"
+  | "accidente"
+  | "atraso"
+  | "pasajero_ausente"
+  | "cambio_recorrido"
+  | "problema_pago"
+  | "problema_cliente"
+  | "equipaje_no_informado"
+  | "otro";
+
+export type DriverIncidentSeverity = "baja" | "media" | "alta";
+export type DriverIncidentStatus = "reportada" | "en_revision" | "resuelta" | "cerrada";
+
+export interface DriverIncident {
+  id: ID;
+  driverId: ID;
+  serviceId?: ID;
+  vehicleId?: ID;
+  type: DriverIncidentType;
+  severity: DriverIncidentSeverity;
+  description: string;
+  actionTaken?: string;
+  canContinue?: boolean;
+  needsImmediateAssistance?: boolean;
+  mileage?: number;
+  photoDemoName?: string;
+  status: DriverIncidentStatus;
+  createdAt: string;
+  isDemo: true;
+}
+
+/** Gasto cargado desde el portal del chofer. Misma forma que ExpenseReport (se integra al mismo listado). */
+export type DriverExpenseDraft = ExpenseReport;
+
+export interface DriverPaymentConfirmation {
+  id: ID;
+  settlementId: ID;
+  confirmedAt: string;
+  note?: string;
   isDemo: true;
 }
 

@@ -50,6 +50,9 @@ export function Footer() {
         <Container className="flex flex-col items-center justify-between gap-2 text-xs text-petrol-400 sm:flex-row">
           <p>© {new Date().getFullYear()} Remistar Intelligence — prototipo demo, sin datos reales.</p>
           <p>Diseñado para presentar el proyecto en su etapa de Discovery.</p>
+          <Link href="/chofer" className="underline decoration-dotted underline-offset-2 hover:text-white">
+            Acceso choferes
+          </Link>
         </Container>
       </div>
     </footer>

@@ -7,3 +7,4 @@ export { maintenanceRecords } from "./maintenance";
 export { opportunities, surveys } from "./commercial";
 export { alerts } from "./alerts";
 export { getRecommendations } from "./recommendations";
+export { driverIncidents } from "./incidents";

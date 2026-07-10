@@ -2,7 +2,7 @@ import type { Vehicle } from "@/lib/types";
 import { SectionCard } from "@/components/shared/SectionCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatCurrency, formatDate, daysFromToday } from "@/lib/format";
-import { vehicleStatusMeta, maintenanceStatusMeta } from "@/lib/status";
+import { vehicleStatusMeta, maintenanceStatusMeta, vehicleCategoryLabels } from "@/lib/status";
 import { driverLabel, servicesForVehicle, maintenanceForVehicle } from "@/lib/selectors";
 import { alerts } from "@/lib/mock";
 
@@ -16,13 +16,6 @@ function docLabel(days: number): string {
   if (days === 0) return "Vence hoy";
   return `Vence en ${days} días`;
 }
-
-const categoryLabels: Record<Vehicle["category"], string> = {
-  sedan_ejecutivo: "Sedán ejecutivo",
-  van: "Van",
-  suv: "SUV",
-  minibus: "Minibús",
-};
 
 export function VehicleDetailContent({ vehicle }: { vehicle: Vehicle }) {
   const status = vehicleStatusMeta(vehicle.status);
@@ -41,7 +34,7 @@ export function VehicleDetailContent({ vehicle }: { vehicle: Vehicle }) {
       <SectionCard title="Datos del vehículo">
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <Field label="Marca y modelo" value={`${vehicle.brand} ${vehicle.model} (${vehicle.year})`} />
-          <Field label="Categoría" value={categoryLabels[vehicle.category]} />
+          <Field label="Categoría" value={vehicleCategoryLabels[vehicle.category]} />
           <Field label="Capacidad" value={`${vehicle.capacity} pasajeros`} />
           <Field label="Kilometraje" value={`${vehicle.mileage.toLocaleString("es-UY")} km`} />
           <Field label="Conductor habitual" value={driverLabel(vehicle.usualDriverId)} />
