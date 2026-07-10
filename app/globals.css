@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f8fa;
+  --foreground: #10161a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+
+  /* Petrol blue — color de marca primario: confianza, control operativo */
+  --color-petrol-50: #eef5f6;
+  --color-petrol-100: #d6e6e8;
+  --color-petrol-200: #adccd1;
+  --color-petrol-300: #7fb0b8;
+  --color-petrol-400: #4f8f99;
+  --color-petrol-500: #33717c;
+  --color-petrol-600: #235a64;
+  --color-petrol-700: #1c4750;
+  --color-petrol-800: #163841;
+  --color-petrol-900: #102730;
+  --color-petrol-950: #0a1a20;
+
+  /* Verde operativo — acento para estados positivos y confirmaciones */
+  --color-opgreen-50: #eefaf3;
+  --color-opgreen-100: #d3f2e0;
+  --color-opgreen-200: #a4e4c2;
+  --color-opgreen-300: #6fd0a1;
+  --color-opgreen-400: #3fb682;
+  --color-opgreen-500: #269a6b;
+  --color-opgreen-600: #1c7c56;
+  --color-opgreen-700: #196546;
+  --color-opgreen-800: #17503a;
+  --color-opgreen-900: #144230;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c7ccd1 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #c7ccd1;
+  border-radius: 9999px;
+}
