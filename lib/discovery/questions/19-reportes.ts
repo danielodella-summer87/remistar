@@ -1,0 +1,85 @@
+import type { DiscoveryQuestion } from "../types";
+
+/**
+ * Síntesis de qué necesita ver Gonzalo para decidir (docs/discovery §19 "qué indicadores usaría si pudiera
+ * medirlos" + catálogo de docs/producto/REMISTAR-MODULOS-V0.md). No inventa respuestas, solo estructura la pregunta.
+ */
+export const reportesQuestions: DiscoveryQuestion[] = [
+  {
+    id: "reportes-indicadores-de-interes",
+    sectionId: "reportes",
+    order: 1,
+    title: "Indicadores de interés",
+    prompt: "¿Qué indicadores te interesaría poder ver en un dashboard?",
+    importance: "critico",
+    type: "multiple",
+    options: [
+      { value: "servicios_diarios", label: "Servicios diarios" },
+      { value: "servicios_mensuales", label: "Servicios mensuales" },
+      { value: "puntualidad", label: "Puntualidad" },
+      { value: "cancelaciones", label: "Cancelaciones" },
+      { value: "ocupacion", label: "Ocupación de la flota" },
+      { value: "choferes", label: "Estado de choferes" },
+      { value: "vehiculos", label: "Estado de vehículos" },
+      { value: "mantenimiento", label: "Mantenimiento" },
+      { value: "facturacion", label: "Facturación" },
+      { value: "cobranza", label: "Cobranza" },
+      { value: "gastos", label: "Gastos" },
+      { value: "liquidaciones", label: "Liquidaciones" },
+      { value: "rentabilidad", label: "Rentabilidad" },
+      { value: "clientes", label: "Clientes" },
+      { value: "oportunidades", label: "Oportunidades" },
+      { value: "reclamos", label: "Reclamos" },
+      { value: "calidad", label: "Calidad" },
+    ],
+  },
+  {
+    id: "reportes-top-5-ranking",
+    sectionId: "reportes",
+    order: 2,
+    title: "Los 5 más importantes",
+    prompt: "Elegí y ordená los 5 indicadores que deberían aparecer primero en el dashboard.",
+    importance: "critico",
+    type: "ranking",
+    options: [
+      { value: "servicios_del_dia", label: "Servicios del día" },
+      { value: "cobranza_pendiente", label: "Cobranza pendiente" },
+      { value: "choferes_disponibles", label: "Choferes disponibles" },
+      { value: "vehiculos_en_mantenimiento", label: "Vehículos en mantenimiento" },
+      { value: "rentabilidad_del_mes", label: "Rentabilidad del mes" },
+      { value: "reclamos_abiertos", label: "Reclamos abiertos" },
+      { value: "liquidaciones_pendientes", label: "Liquidaciones pendientes" },
+      { value: "oportunidades_comerciales", label: "Oportunidades comerciales" },
+    ],
+  },
+  {
+    id: "reportes-frecuencia-revision",
+    sectionId: "reportes",
+    order: 3,
+    title: "Frecuencia de revisión",
+    prompt: "¿Con qué frecuencia querría Gonzalo revisar estos indicadores?",
+    importance: "importante",
+    type: "unica",
+    options: [
+      { value: "diaria", label: "Diaria" },
+      { value: "semanal", label: "Semanal" },
+      { value: "mensual", label: "Mensual" },
+      { value: "cuando_haga_falta", label: "Solo cuando haga falta" },
+    ],
+  },
+  {
+    id: "reportes-formato-preferido",
+    sectionId: "reportes",
+    order: 4,
+    title: "Formato preferido",
+    prompt: "¿En qué formato preferiría ver los reportes?",
+    importance: "complementario",
+    type: "unica",
+    options: [
+      { value: "pantalla_dashboard", label: "Pantalla / dashboard" },
+      { value: "resumen_por_whatsapp", label: "Resumen por WhatsApp" },
+      { value: "planilla_exportable", label: "Planilla exportable" },
+      { value: "no_tiene_preferencia", label: "No tiene preferencia" },
+    ],
+  },
+];

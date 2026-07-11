@@ -14,6 +14,7 @@ import type {
   VehicleOwnership,
   PaymentScheme,
 } from "@/lib/types";
+import type { DiscoveryStatus, DiscoverySectionStatus } from "@/lib/discovery/types";
 
 export type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "brand";
 
@@ -164,6 +165,33 @@ export function opportunityStageMeta(stage: OpportunityStage): StatusMeta {
   };
   return map[stage];
 }
+
+export function discoveryStatusMeta(status: DiscoveryStatus): StatusMeta {
+  const map: Record<DiscoveryStatus, StatusMeta> = {
+    sin_responder: { label: "Sin responder", tone: "neutral" },
+    respondida: { label: "Respondida", tone: "success" },
+    requiere_revision: { label: "Requiere revisión", tone: "danger" },
+    pendiente_confirmar: { label: "No lo sabemos todavía", tone: "warning" },
+  };
+  return map[status];
+}
+
+export function discoverySectionStatusMeta(status: DiscoverySectionStatus): StatusMeta {
+  const map: Record<DiscoverySectionStatus, StatusMeta> = {
+    no_iniciada: { label: "No iniciada", tone: "neutral" },
+    en_progreso: { label: "En progreso", tone: "info" },
+    lista_para_revisar: { label: "Lista para revisar", tone: "brand" },
+    confirmada: { label: "Confirmada", tone: "success" },
+    requiere_revision: { label: "Requiere revisión", tone: "danger" },
+  };
+  return map[status];
+}
+
+export const discoveryImportanceLabels: Record<string, string> = {
+  critico: "Crítico",
+  importante: "Importante",
+  complementario: "Complementario",
+};
 
 export const serviceTypeLabels: Record<string, string> = {
   aeropuerto: "Aeropuerto",

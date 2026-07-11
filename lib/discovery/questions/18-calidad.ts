@@ -1,0 +1,71 @@
+import type { DiscoveryQuestion } from "../types";
+
+/** Fuente: docs/discovery/REMISTAR-DISCOVERY-1-cuestionario-operativo.md §19. */
+export const calidadQuestions: DiscoveryQuestion[] = [
+  {
+    id: "calidad-se-hacen-encuestas",
+    sectionId: "calidad",
+    order: 1,
+    title: "Encuestas de satisfacción",
+    prompt: "¿Se realiza hoy algún tipo de encuesta o seguimiento de satisfacción del cliente?",
+    importance: "critico",
+    type: "si_no_nose",
+  },
+  {
+    id: "calidad-canal-encuesta",
+    sectionId: "calidad",
+    order: 2,
+    title: "Canal de la encuesta",
+    prompt: "¿Por qué canal se hacen esas encuestas o consultas de satisfacción?",
+    importance: "importante",
+    type: "unica",
+    allowOther: true,
+    dependsOn: { questionId: "calidad-se-hacen-encuestas", equalsAny: ["si"] },
+    options: [
+      { value: "whatsapp", label: "WhatsApp" },
+      { value: "llamada", label: "Llamada" },
+      { value: "formulario", label: "Formulario" },
+    ],
+  },
+  {
+    id: "calidad-como-se-gestionan-reclamos",
+    sectionId: "calidad",
+    order: 3,
+    title: "Gestión de reclamos",
+    prompt: "¿Cómo se reciben y gestionan hoy los reclamos o quejas?",
+    importance: "critico",
+    type: "unica",
+    allowOther: true,
+    options: [
+      { value: "whatsapp_directo_a_gonzalo", label: "WhatsApp directo a Gonzalo" },
+      { value: "llamada", label: "Llamada" },
+      { value: "no_hay_canal_definido", label: "No hay canal definido" },
+    ],
+  },
+  {
+    id: "calidad-que-es-buen-servicio",
+    sectionId: "calidad",
+    order: 4,
+    title: "Qué es un buen servicio",
+    prompt: "¿Qué define un buen servicio para Gonzalo? ¿Qué indicadores usaría si pudiera medirlos?",
+    importance: "importante",
+    type: "multiple",
+    allowOther: true,
+    options: [
+      { value: "puntualidad", label: "Puntualidad" },
+      { value: "buen_trato_del_chofer", label: "Buen trato del chofer" },
+      { value: "vehiculo_en_buen_estado", label: "Vehículo en buen estado" },
+      { value: "comunicacion_clara", label: "Comunicación clara" },
+      { value: "precio_justo", label: "Precio justo" },
+    ],
+  },
+  {
+    id: "calidad-incentivos-choferes",
+    sectionId: "calidad",
+    order: 5,
+    title: "Incentivos a choferes",
+    prompt: "¿Existen incentivos para choferes por buen desempeño?",
+    importance: "complementario",
+    type: "si_no_nose",
+  },
+];

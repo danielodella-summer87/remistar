@@ -1,0 +1,83 @@
+import type { DiscoveryQuestion } from "../types";
+
+/** Fuente: docs/discovery/REMISTAR-DISCOVERY-1-cuestionario-operativo.md §12. No se diseña un sistema fiscal propio. */
+export const facturacionQuestions: DiscoveryQuestion[] = [
+  {
+    id: "facturacion-sistema-actual",
+    sectionId: "facturacion",
+    order: 1,
+    title: "Sistema actual de facturación",
+    prompt: "¿Con qué sistema o método se factura hoy?",
+    importance: "critico",
+    type: "unica",
+    allowOther: true,
+    options: [
+      { value: "sistema_de_facturacion_electronica", label: "Sistema de facturación electrónica" },
+      { value: "facturero_manual", label: "Facturero manual" },
+      { value: "ninguno_formal", label: "Ninguno formal" },
+    ],
+  },
+  {
+    id: "facturacion-e-factura-vigente",
+    sectionId: "facturacion",
+    order: 2,
+    title: "Facturación electrónica en Uruguay",
+    prompt: "¿Remistar ya tiene un sistema de facturación electrónica vigente en Uruguay?",
+    importance: "critico",
+    type: "si_no_nose",
+  },
+  {
+    id: "facturacion-agrupacion",
+    sectionId: "facturacion",
+    order: 3,
+    title: "Facturación individual o agrupada",
+    prompt: "¿La facturación es por servicio individual, o se agrupan servicios en una factura periódica?",
+    importance: "critico",
+    type: "unica",
+    options: [
+      { value: "por_servicio_individual", label: "Por servicio individual" },
+      { value: "agrupada_periodica", label: "Agrupada, periódica (ej. mensual)" },
+      { value: "ambas_segun_cliente", label: "Ambas, según el cliente" },
+    ],
+  },
+  {
+    id: "facturacion-datos-fiscales-necesarios",
+    sectionId: "facturacion",
+    order: 4,
+    title: "Datos fiscales necesarios",
+    prompt: "¿Qué datos fiscales se necesitan del cliente para facturar?",
+    importance: "importante",
+    type: "multiple",
+    allowOther: true,
+    options: [
+      { value: "razon_social", label: "Razón social" },
+      { value: "rut", label: "RUT" },
+      { value: "direccion_fiscal", label: "Dirección fiscal" },
+      { value: "email", label: "Email" },
+    ],
+  },
+  {
+    id: "facturacion-debe-integrarse",
+    sectionId: "facturacion",
+    order: 5,
+    title: "Integración necesaria",
+    prompt: "¿Este proyecto debe integrarse con el sistema de facturación existente, o Remistar no tiene uno definido?",
+    tip: "Principio del proyecto: no crear un sistema de facturación propio si se puede integrar con el real.",
+    importance: "critico",
+    type: "unica",
+    options: [
+      { value: "integrar_con_sistema_existente", label: "Integrar con el sistema existente" },
+      { value: "no_tiene_sistema_definido_aun", label: "No tiene un sistema definido aún" },
+      { value: "no_se", label: "Todavía no se sabe" },
+    ],
+  },
+  {
+    id: "facturacion-gastos-refacturables",
+    sectionId: "facturacion",
+    order: 6,
+    title: "Gastos refacturables en la factura",
+    prompt: "¿Se incluyen gastos refacturables (peajes, estacionamiento) dentro de la factura al cliente?",
+    importance: "importante",
+    type: "si_no_nose",
+  },
+];

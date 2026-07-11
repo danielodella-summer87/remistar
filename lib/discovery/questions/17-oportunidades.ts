@@ -1,0 +1,71 @@
+import type { DiscoveryQuestion } from "../types";
+
+/** Fuente: docs/discovery/REMISTAR-DISCOVERY-1-cuestionario-operativo.md §20. */
+export const oportunidadesQuestions: DiscoveryQuestion[] = [
+  {
+    id: "oportunidades-tipos-clientes-buscados",
+    sectionId: "oportunidades",
+    order: 1,
+    title: "Tipos de cliente buscados",
+    prompt: "¿Qué tipo de clientes le interesaría sumar a Remistar?",
+    importance: "importante",
+    type: "multiple",
+    allowOther: true,
+    options: [
+      { value: "hoteles", label: "Hoteles" },
+      { value: "empresas", label: "Empresas" },
+      { value: "clinicas", label: "Clínicas" },
+      { value: "agencias", label: "Agencias" },
+      { value: "eventos", label: "Eventos" },
+      { value: "instituciones", label: "Instituciones" },
+      { value: "ninguno_definido", label: "Ninguno definido todavía" },
+    ],
+  },
+  {
+    id: "oportunidades-como-detecta-hoy",
+    sectionId: "oportunidades",
+    order: 2,
+    title: "Cómo se detecta una oportunidad",
+    prompt: "¿Cómo detecta Gonzalo hoy una oportunidad de negocio?",
+    importance: "critico",
+    type: "unica",
+    allowOther: true,
+    options: [
+      { value: "por_intuicion_y_experiencia", label: "Por intuición y experiencia" },
+      { value: "seguimiento_de_clientes_frecuentes", label: "Seguimiento de clientes frecuentes" },
+      { value: "no_hay_proceso_definido", label: "No hay proceso definido" },
+    ],
+  },
+  {
+    id: "oportunidades-seguimiento-comercial",
+    sectionId: "oportunidades",
+    order: 3,
+    title: "Seguimiento comercial",
+    prompt: "¿Se hace seguimiento a clientes que consultaron pero no contrataron?",
+    importance: "importante",
+    type: "si_no_nose",
+  },
+  {
+    id: "oportunidades-convenios-vigentes",
+    sectionId: "oportunidades",
+    order: 4,
+    title: "Convenios vigentes",
+    prompt: "¿Existen convenios o acuerdos comerciales vigentes (hoteles, agencias, empresas)?",
+    importance: "importante",
+    type: "si_no_nose",
+  },
+  {
+    id: "oportunidades-responsable-comercial",
+    sectionId: "oportunidades",
+    order: 5,
+    title: "Responsable comercial",
+    prompt: "¿Quién se encarga hoy de la parte comercial?",
+    importance: "complementario",
+    type: "unica",
+    options: [
+      { value: "gonzalo", label: "Gonzalo" },
+      { value: "otra_persona", label: "Otra persona" },
+      { value: "nadie_en_particular", label: "Nadie en particular" },
+    ],
+  },
+];

@@ -15,6 +15,7 @@ import {
   Star,
   BellRing,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 
 export interface NavItem {
@@ -67,8 +68,12 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Control",
+    items: [{ label: "Alertas", href: "/app/alertas", icon: BellRing }],
+  },
+  {
+    label: "Configuración y evolución",
     items: [
-      { label: "Alertas", href: "/app/alertas", icon: BellRing },
+      { label: "Relevamiento", href: "/app/relevamiento", icon: ClipboardList },
       { label: "Configuración", href: "/app/configuracion", icon: Settings },
     ],
   },
