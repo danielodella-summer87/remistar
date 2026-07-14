@@ -8,6 +8,14 @@ import type { DiscoverySessionDetailResponse } from "./session-detail-api-types"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Sesión real de la entrevista con Gonzalo (Remistar). Hardcodeada a propósito: hoy existe
+ * una única sesión real y el objetivo es que cualquier navegador sin relevamiento local la
+ * recupere solo automáticamente, sin pedirle el UUID a nadie. Si en el futuro hay más de una
+ * sesión real, esto debe reemplazarse por un mecanismo real de selección/autenticación.
+ */
+export const GONZALO_SESSION_ID = "10ff2003-1280-420e-b53c-cc8da51bcc1e";
+
 export type RecoveryError = "invalid_uuid" | "not_found" | "network_error";
 
 export type RecoveryResult =

@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Users2, CheckCircle2, AlertTriangle, ListChecks, FileText, Search } from "lucide-react";
+import { ArrowRight, Users2, CheckCircle2, AlertTriangle, ListChecks, FileText, Search, Loader2, TriangleAlert } from "lucide-react";
 import { discoverySections } from "@/lib/discovery/sections";
 import { computeProgress } from "@/lib/discovery/progress";
 import { computeRecommendations, computeContradictions } from "@/lib/discovery/rules";
 import { useDiscoveryState, discoveryActions } from "@/lib/discovery/store";
 import { buildExportData } from "@/lib/discovery/export";
+import {
+  GONZALO_SESSION_ID,
+  fetchSessionForRecovery,
+  applyRecoveredSession,
+  hasActiveLocalDiscovery,
+  type RecoveryError,
+} from "@/lib/discovery/recovery";
 import { DiscoverySectionCard } from "./DiscoverySectionCard";
 import { DiscoveryProgressBar } from "./DiscoveryProgressBar";
 import { DiscoveryResetDialog } from "./DiscoveryResetDialog";
@@ -16,6 +23,12 @@ import { DiscoveryExportActions } from "./DiscoveryExportActions";
 import { DiscoveryEditLink } from "./DiscoveryEditLink";
 import { DiscoveryIdentityDialog } from "./DiscoveryIdentityDialog";
 import { DiscoveryRecoveryDialog } from "./DiscoveryRecoveryDialog";
+
+const AUTO_RECOVERY_ERROR_MESSAGES: Record<RecoveryError, string> = {
+  invalid_uuid: "El id de la consulta guardada no tiene formato válido.",
+  not_found: "No se encontró la consulta guardada en el servidor.",
+  network_error: "No se pudo conectar con el servidor para recuperar la consulta guardada.",
+};
 
 function formatDate(iso?: string) {
   if (!iso) return "Todavía sin actividad";
@@ -27,6 +40,35 @@ export function DiscoveryDashboard() {
   const state = useDiscoveryState();
   const [showIdentityDialog, setShowIdentityDialog] = useState(false);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [autoRecovery, setAutoRecovery] = useState<{ status: "checking" | "loading" | "done" | "error"; error?: string }>({
+    status: "checking",
+  });
+
+  // Auto-recuperación: si este navegador todavía no tiene ningún relevamiento local (ni
+  // respuestas ni sessionId propio), trae automáticamente la sesión real de Gonzalo desde
+  // Supabase, sin pedirle el UUID a nadie. Corre una sola vez al montar (solo client-side,
+  // por eso nunca compite con el snapshot vacío usado para SSR). Si ya hay algo local, se
+  // respeta tal cual y no se toca. Si falla, se muestra el error y no se crea ninguna sesión.
+  useEffect(() => {
+    if (hasActiveLocalDiscovery()) {
+      setAutoRecovery({ status: "done" });
+      return;
+    }
+    let cancelled = false;
+    setAutoRecovery({ status: "loading" });
+    fetchSessionForRecovery(GONZALO_SESSION_ID).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        applyRecoveredSession(result.detail);
+        setAutoRecovery({ status: "done" });
+      } else {
+        setAutoRecovery({ status: "error", error: AUTO_RECOVERY_ERROR_MESSAGES[result.error] });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const progress = useMemo(
     () => computeProgress(state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections),
     [state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections]
@@ -60,8 +102,26 @@ export function DiscoveryDashboard() {
   const criticalPendingTop = exportData.pending.filter((p) => p.importance === "critico").slice(0, 5);
   const complementaryPending = exportData.pending.filter((p) => p.importance === "complementario").slice(0, 4);
 
+  if (autoRecovery.status === "checking" || autoRecovery.status === "loading") {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-slate-500">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <p className="text-sm font-medium">Cargando relevamiento…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+      {autoRecovery.status === "error" && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-medium">No se pudo recuperar automáticamente la consulta guardada.</p>
+            <p className="mt-0.5 text-xs text-amber-700">{autoRecovery.error} Podés reintentar recargando la página, o usar &quot;Recuperar consulta existente&quot; más abajo con el id manualmente.</p>
+          </div>
+        </div>
+      )}
       {/* 1. Estado general + 2. CTA principal */}
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
