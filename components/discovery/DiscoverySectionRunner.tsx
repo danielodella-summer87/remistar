@@ -8,7 +8,7 @@ import type { DiscoverySection } from "@/lib/discovery/types";
 import { getQuestionsBySection, isQuestionVisible } from "@/lib/discovery/questions/index";
 import { discoverySections } from "@/lib/discovery/sections";
 import { useDiscoveryState, discoveryActions, flushDiscoveryChanges, isHydratedDiscoveryState } from "@/lib/discovery/store";
-import { syncAnswerToSupabase } from "@/lib/discovery/sync";
+import { syncAnswerToSupabase, syncConfirmedSectionsToSupabase } from "@/lib/discovery/sync";
 import { computeSectionProgress } from "@/lib/discovery/progress";
 import { computeContradictions } from "@/lib/discovery/rules";
 import { DiscoveryQuestionCard } from "./DiscoveryQuestionCard";
@@ -114,6 +114,7 @@ export function DiscoverySectionRunner({ section, initialQuestionId }: { section
   function goNext() {
     if (isLast) {
       discoveryActions.confirmSection(section.id, true);
+      void syncConfirmedSectionsToSupabase();
       flushDiscoveryChanges();
       const leavingQuestion = questions[currentIndex];
       if (leavingQuestion) void syncAnswerToSupabase(leavingQuestion.id);
@@ -232,9 +233,18 @@ export function DiscoverySectionRunner({ section, initialQuestionId }: { section
       <DiscoverySectionStatusBanner
         status={sectionProgress.status}
         reopenedAt={sectionProgress.reopenedAt}
-        onReopen={() => discoveryActions.reopenSection(section.id)}
-        onConfirmAgain={() => discoveryActions.confirmSection(section.id, true)}
-        onMarkListaParaRevisar={() => discoveryActions.confirmSection(section.id, false)}
+        onReopen={() => {
+          discoveryActions.reopenSection(section.id);
+          void syncConfirmedSectionsToSupabase();
+        }}
+        onConfirmAgain={() => {
+          discoveryActions.confirmSection(section.id, true);
+          void syncConfirmedSectionsToSupabase();
+        }}
+        onMarkListaParaRevisar={() => {
+          discoveryActions.confirmSection(section.id, false);
+          void syncConfirmedSectionsToSupabase();
+        }}
       />
     </div>
   );

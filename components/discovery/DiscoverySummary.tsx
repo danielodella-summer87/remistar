@@ -13,6 +13,7 @@ import { DiscoveryNotes } from "./DiscoveryNotes";
 import { DiscoveryEditLink } from "./DiscoveryEditLink";
 import { DiscoverySectionStatusBadge } from "./DiscoveryStatusBadge";
 import { discoveryActions } from "@/lib/discovery/store";
+import { syncConfirmedSectionsToSupabase } from "@/lib/discovery/sync";
 
 type FilterKey = "confirmados" | "pendientes" | "supuestos" | "criticos" | "recomendaciones" | "contradicciones";
 
@@ -94,7 +95,10 @@ export function DiscoverySummary() {
                   {progress.status === "reabierta" ? (
                     <button
                       type="button"
-                      onClick={() => discoveryActions.confirmSection(section.id, true)}
+                      onClick={() => {
+                        discoveryActions.confirmSection(section.id, true);
+                        void syncConfirmedSectionsToSupabase();
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-opgreen-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-opgreen-700 hover:bg-opgreen-100"
                     >
                       <ShieldCheck className="h-3 w-3" />
@@ -103,7 +107,10 @@ export function DiscoverySummary() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => discoveryActions.reopenSection(section.id)}
+                      onClick={() => {
+                        discoveryActions.reopenSection(section.id);
+                        void syncConfirmedSectionsToSupabase();
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
                     >
                       <RotateCcw className="h-3 w-3" />

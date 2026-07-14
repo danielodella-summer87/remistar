@@ -38,8 +38,8 @@ export async function ensureDiscoverySession(): Promise<string | null> {
           }),
         });
         if (!res.ok) return null;
-        const data = (await res.json()) as { id: string; recoveryToken: string };
-        discoveryActions.setSession(data.id, data.recoveryToken);
+        const data = (await res.json()) as { id: string; recoveryToken: string; updatedAt: string };
+        discoveryActions.setSession(data.id, data.recoveryToken, data.updatedAt);
         return data.id;
       } catch {
         return null;
@@ -99,5 +99,65 @@ export async function syncAnswerToSupabase(questionId: string): Promise<void> {
     discoveryActions.setSyncStatus("error");
   } finally {
     inFlightAnswers.delete(questionId);
+  }
+}
+
+let confirmedSectionsSyncing = false;
+
+/**
+ * Sincroniza `confirmedSections` a Supabase con concurrencia optimista: manda el `updated_at`
+ * de la sesión tal como lo vimos la última vez. Si la fila cambió desde entonces (409), no
+ * sobrescribe nada localmente — solo adopta el `updated_at` real para que el próximo intento
+ * ya no choque contra un valor viejo. Nunca lanza; cualquier falla se refleja en `syncStatus`.
+ */
+export async function syncConfirmedSectionsToSupabase(): Promise<void> {
+  if (confirmedSectionsSyncing) return;
+  confirmedSectionsSyncing = true;
+  discoveryActions.setSyncStatus("syncing");
+
+  try {
+    const sessionId = await ensureDiscoverySession();
+    if (!sessionId) {
+      discoveryActions.setSyncStatus("error");
+      return;
+    }
+
+    const state = getDiscoveryStateSnapshot();
+    const expectedUpdatedAt = state.sessionUpdatedAt;
+    if (!expectedUpdatedAt) {
+      // Todavía no leímos updated_at de esta sesión (ej. sesión recién creada sin refetch) — no hay
+      // base segura para la concurrencia optimista, así que no se envía nada hasta la próxima vez.
+      discoveryActions.setSyncStatus("error");
+      return;
+    }
+
+    const res = await fetch(`/api/discovery/sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        confirmedSections: state.confirmedSections,
+        expectedUpdatedAt,
+      }),
+    });
+
+    const data = (await res.json()) as { confirmedSections?: Record<string, boolean>; updatedAt?: string };
+
+    if (res.status === 409) {
+      console.warn("confirmedSections: conflicto de concurrencia, la sesión cambió desde la última lectura.");
+      if (data.updatedAt) discoveryActions.setSessionUpdatedAt(data.updatedAt);
+      discoveryActions.setSyncStatus("error");
+      return;
+    }
+    if (!res.ok || !data.updatedAt) {
+      discoveryActions.setSyncStatus("error");
+      return;
+    }
+
+    discoveryActions.setConfirmedSectionsFromServer(data.confirmedSections ?? state.confirmedSections, data.updatedAt);
+    discoveryActions.setSyncStatus("synced", new Date().toISOString());
+  } catch {
+    discoveryActions.setSyncStatus("error");
+  } finally {
+    confirmedSectionsSyncing = false;
   }
 }

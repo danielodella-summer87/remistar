@@ -23,6 +23,8 @@ export interface DiscoveryState {
   sessionId?: string;
   /** token opaco de recuperación de esa sesión (discovery_sessions.recovery_token). */
   recoveryToken?: string;
+  /** updated_at de discovery_sessions tal como lo vimos la última vez; base para la concurrencia optimista de confirmedSections. */
+  sessionUpdatedAt?: string;
   /** Estado de la última sincronización con Supabase; no afecta al guardado local, que sigue siendo síncrono. */
   syncStatus?: DiscoverySyncStatus;
   /** Fecha/hora ISO de la última sincronización exitosa con Supabase. */
@@ -45,6 +47,7 @@ const DEFAULT_STATE: DiscoveryState = {
   reopenedSections: {},
   sessionId: undefined,
   recoveryToken: undefined,
+  sessionUpdatedAt: undefined,
   syncStatus: "idle",
   lastSyncedAt: undefined,
   intervieweeName: undefined,
@@ -185,9 +188,21 @@ export const discoveryActions = {
   },
 
   /** Asocia el estado local a una sesión real de Supabase, sin tocar respuestas ni posición. */
-  setSession(sessionId: string, recoveryToken: string) {
+  setSession(sessionId: string, recoveryToken: string, sessionUpdatedAt?: string) {
     const state = read();
-    write({ ...state, sessionId, recoveryToken, syncStatus: "idle" });
+    write({ ...state, sessionId, recoveryToken, sessionUpdatedAt: sessionUpdatedAt ?? state.sessionUpdatedAt, syncStatus: "idle" });
+  },
+
+  /** Refleja el resultado de una sincronización exitosa de confirmedSections con Supabase. */
+  setConfirmedSectionsFromServer(confirmedSections: Record<string, boolean>, sessionUpdatedAt: string) {
+    const state = read();
+    write({ ...state, confirmedSections, sessionUpdatedAt });
+  },
+
+  /** Solo actualiza el `updated_at` conocido de la sesión (ej. tras un 409 de concurrencia, para no reintentar contra un valor ya viejo). */
+  setSessionUpdatedAt(sessionUpdatedAt: string) {
+    const state = read();
+    write({ ...state, sessionUpdatedAt });
   },
 
   /** Refleja el resultado de la última sincronización de una respuesta con Supabase. */
@@ -212,6 +227,47 @@ export const discoveryActions = {
       companyName: clean(identity.companyName) ?? state.companyName,
       email: clean(identity.email) ?? state.email,
       phone: clean(identity.phone) ?? state.phone,
+    });
+  },
+
+  /**
+   * Reemplaza por completo el estado local con una sesión ya existente en Supabase (recuperación
+   * desde otro navegador/dispositivo). Quien llama ya debe haber confirmado la sobrescritura si
+   * había un relevamiento local activo — esta acción no pregunta, solo aplica.
+   * `confirmedSections` y `sessionUpdatedAt` vienen del backend (columna `confirmed_sections` y
+   * `updated_at` de discovery_sessions); si no vinieran, quedan en `{}`/`undefined` como en `DEFAULT_STATE`.
+   */
+  hydrateFromRemoteSession(session: {
+    id: string;
+    intervieweeName: string;
+    companyName: string;
+    currentSectionSlug?: string;
+    currentQuestionId?: string;
+    confirmedSections?: Record<string, boolean>;
+    sessionUpdatedAt?: string;
+    answers: Array<{ questionId: string; value: DiscoveryAnswerValue; updatedAt?: string }>;
+  }) {
+    const answers: Record<string, DiscoveryAnswer> = {};
+    for (const a of session.answers) {
+      answers[a.questionId] = {
+        questionId: a.questionId,
+        status: a.value === undefined ? "pendiente_confirmar" : "respondida",
+        value: a.value,
+        updatedAt: a.updatedAt,
+      };
+    }
+    write({
+      ...DEFAULT_STATE,
+      answers,
+      confirmedSections: session.confirmedSections ?? {},
+      intervieweeName: session.intervieweeName,
+      companyName: session.companyName,
+      sessionId: session.id,
+      sessionUpdatedAt: session.sessionUpdatedAt,
+      currentSectionSlug: session.currentSectionSlug,
+      currentQuestionId: session.currentQuestionId,
+      syncStatus: "synced",
+      lastSyncedAt: nowIso(),
     });
   },
 };

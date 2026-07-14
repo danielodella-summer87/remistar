@@ -4,6 +4,7 @@ import type { DiscoverySection, DiscoverySectionProgress } from "@/lib/discovery
 import { DiscoverySectionStatusBadge } from "./DiscoveryStatusBadge";
 import { DiscoveryProgressBar } from "./DiscoveryProgressBar";
 import { discoveryActions } from "@/lib/discovery/store";
+import { syncConfirmedSectionsToSupabase } from "@/lib/discovery/sync";
 
 const difficultyLabels: Record<DiscoverySection["difficulty"], string> = {
   simple: "Simple",
@@ -51,7 +52,10 @@ export function DiscoverySectionCard({ section, progress }: { section: Discovery
       {canReopen && (
         <button
           type="button"
-          onClick={() => discoveryActions.reopenSection(section.id)}
+          onClick={() => {
+            discoveryActions.reopenSection(section.id);
+            void syncConfirmedSectionsToSupabase();
+          }}
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
         >
           <RotateCcw className="h-3 w-3" />

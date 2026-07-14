@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Users2, CheckCircle2, AlertTriangle, ListChecks, FileText } from "lucide-react";
+import { ArrowRight, Users2, CheckCircle2, AlertTriangle, ListChecks, FileText, Search } from "lucide-react";
 import { discoverySections } from "@/lib/discovery/sections";
 import { computeProgress } from "@/lib/discovery/progress";
 import { computeRecommendations, computeContradictions } from "@/lib/discovery/rules";
@@ -15,6 +15,7 @@ import { DiscoveryResetDialog } from "./DiscoveryResetDialog";
 import { DiscoveryExportActions } from "./DiscoveryExportActions";
 import { DiscoveryEditLink } from "./DiscoveryEditLink";
 import { DiscoveryIdentityDialog } from "./DiscoveryIdentityDialog";
+import { DiscoveryRecoveryDialog } from "./DiscoveryRecoveryDialog";
 
 function formatDate(iso?: string) {
   if (!iso) return "Todavía sin actividad";
@@ -25,6 +26,7 @@ export function DiscoveryDashboard() {
   const router = useRouter();
   const state = useDiscoveryState();
   const [showIdentityDialog, setShowIdentityDialog] = useState(false);
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const progress = useMemo(
     () => computeProgress(state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections),
     [state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections]
@@ -188,6 +190,13 @@ export function DiscoveryDashboard() {
           </Link>
           <DiscoveryResetDialog onConfirm={discoveryActions.resetDemo} />
           <DiscoveryExportActions data={exportData} />
+          <button
+            type="button"
+            onClick={() => setShowRecoveryDialog(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            <Search className="h-3.5 w-3.5" /> Recuperar consulta existente
+          </button>
         </div>
         <p className="mt-2 text-[11px] text-slate-400">
           Usá esta opción antes de comenzar la consulta real con Gonzalo si realizaste pruebas anteriormente.
@@ -203,6 +212,8 @@ export function DiscoveryDashboard() {
           router.push(`/app/relevamiento/${nextSection.slug}`);
         }}
       />
+
+      <DiscoveryRecoveryDialog open={showRecoveryDialog} onClose={() => setShowRecoveryDialog(false)} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { AlertTriangle, FileWarning, RotateCcw, ShieldCheck } from "lucide-react";
 import { useDiscoveryState, discoveryActions } from "@/lib/discovery/store";
+import { syncConfirmedSectionsToSupabase } from "@/lib/discovery/sync";
 import { buildExportData, buildResponsibleGroups } from "@/lib/discovery/export";
 import { DISCOVERY_RESPONSIBLE_LABELS } from "@/lib/discovery/types";
 import { discoverySections } from "@/lib/discovery/sections";
@@ -51,7 +52,10 @@ export function DiscoveryPendingList() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => discoveryActions.confirmSection(section.id, true)}
+                  onClick={() => {
+                    discoveryActions.confirmSection(section.id, true);
+                    void syncConfirmedSectionsToSupabase();
+                  }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-opgreen-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-opgreen-700 hover:bg-opgreen-100"
                 >
                   <ShieldCheck className="h-3 w-3" />
