@@ -42,13 +42,15 @@ function answerValueLabel(question: (typeof ALL_QUESTIONS)[number], answer: { va
 }
 
 export function buildExportData(state: DiscoveryState) {
-  const progress = computeProgress(state.answers, state.confirmedSections, state.recommendationDecisions);
+  const progress = computeProgress(state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections);
   const contradictions = computeContradictions(state.answers).filter((c) => c.detected);
   const recommendations = computeRecommendations(state.answers, state.recommendationDecisions).filter((r) => r.detected);
 
   const confirmed = ALL_QUESTIONS.filter((q) => isQuestionVisible(q, state.answers))
     .filter((q) => state.answers[q.id]?.status === "respondida")
     .map((q) => ({
+      id: q.id,
+      sectionId: q.sectionId,
       section: discoverySections.find((s) => s.id === q.sectionId)?.title ?? q.sectionId,
       question: q.title,
       answer: answerValueLabel(q, state.answers[q.id] ?? {}),
@@ -58,6 +60,8 @@ export function buildExportData(state: DiscoveryState) {
   const assumptions = ALL_QUESTIONS.filter((q) => isQuestionVisible(q, state.answers))
     .filter((q) => state.answers[q.id]?.status === "pendiente_confirmar")
     .map((q) => ({
+      id: q.id,
+      sectionId: q.sectionId,
       section: discoverySections.find((s) => s.id === q.sectionId)?.title ?? q.sectionId,
       question: q.title,
     }));

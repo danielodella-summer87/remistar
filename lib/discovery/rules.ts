@@ -29,6 +29,7 @@ interface RecommendationRule {
   why: string;
   proposal: string;
   modules: string[];
+  questionIds: string[];
   isDetected: (answers: AnswersMap) => boolean;
 }
 
@@ -40,6 +41,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "En una empresa puede pedir el viaje una secretaria, viajar otra persona, pagar la empresa y recibir la factura un contacto administrativo diferente.",
     proposal: "Conviene diferenciar solicitante, pasajero, pagador y contacto administrativo como roles separados.",
     modules: ["Clientes y pasajeros", "Facturación"],
+    questionIds: ["clientes-tipos-cliente"],
     isDetected: (answers) => includesValue(answers, "clientes-tipos-cliente", "empresa"),
   },
   {
@@ -49,6 +51,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "Cuando el chofer aporta el vehículo, sus costos (combustible, desgaste) no deberían mezclarse con la comisión del servicio.",
     proposal: "Será necesario separar liquidación por servicio, reintegros y costos del vehículo.",
     modules: ["Liquidación de choferes", "Gastos y rendiciones"],
+    questionIds: ["choferes-vehiculo-propiedad"],
     isDetected: (answers) =>
       equalsValue(answers, "choferes-vehiculo-propiedad", "siempre_propio") ||
       equalsValue(answers, "choferes-vehiculo-propiedad", "puede_ser_cualquiera"),
@@ -60,6 +63,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "Cargar un servicio recurrente a mano, viaje por viaje, es trabajo repetido y propenso a errores.",
     proposal: "Conviene incorporar plantillas de reserva y repetición automática para servicios recurrentes.",
     modules: ["Agenda y coordinación", "Servicios"],
+    questionIds: ["servicios-recurrentes-existen"],
     isDetected: (answers) => equalsValue(answers, "servicios-recurrentes-existen", "si"),
   },
   {
@@ -69,6 +73,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "Sin trazabilidad servicio-cliente-factura, controlar cuánto debe cada cliente se vuelve manual y propenso a error.",
     proposal: "Cobranza y facturación deben relacionarse con cada servicio y cliente.",
     modules: ["Cobranza", "Facturación"],
+    questionIds: ["cobranza-medios-pago"],
     isDetected: (answers) => includesValue(answers, "cobranza-medios-pago", "cuenta_corriente"),
   },
   {
@@ -78,6 +83,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "Sin un dato de kilometraje actualizado, no se puede anticipar cuándo un vehículo necesita service.",
     proposal: "El portal del chofer debería solicitar actualización periódica del odómetro.",
     modules: ["Mantenimiento", "Portal del chofer"],
+    questionIds: ["mantenimiento-criterio-control"],
     isDetected: (answers) => includesValue(answers, "mantenimiento-criterio-control", "por_kilometraje"),
   },
   {
@@ -87,6 +93,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "Sin trazabilidad de la autorización, es difícil resolver diferencias o reclamos sobre un gasto.",
     proposal: "El sistema debería registrar quién autorizó, cuándo y por qué.",
     modules: ["Gastos y rendiciones"],
+    questionIds: ["gastos-requiere-autorizacion-previa"],
     isDetected: (answers) => equalsValue(answers, "gastos-requiere-autorizacion-previa", "si"),
   },
   {
@@ -96,6 +103,7 @@ const RECOMMENDATION_RULES: RecommendationRule[] = [
     why: "Automatizar decisiones que hoy dependen de un solo criterio humano es riesgoso sin un período de confianza previo.",
     proposal: "La primera etapa debería priorizar alertas y recomendaciones, no automatizaciones autónomas.",
     modules: ["Automatizaciones e inteligencia"],
+    questionIds: ["empresa-delegacion-decisiones"],
     isDetected: (answers) => equalsValue(answers, "empresa-delegacion-decisiones", "gonzalo_todo"),
   },
 ];
@@ -112,6 +120,7 @@ export function computeRecommendations(
     why: rule.why,
     proposal: rule.proposal,
     modules: rule.modules,
+    questionIds: rule.questionIds,
     decision: decisions[rule.id] ?? "sugerida",
   }));
 }

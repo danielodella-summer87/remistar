@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Users2, CheckCircle2, AlertTriangle, ListChecks, FileText } from "lucide-react";
 import { discoverySections } from "@/lib/discovery/sections";
 import { computeProgress } from "@/lib/discovery/progress";
@@ -12,6 +13,8 @@ import { DiscoverySectionCard } from "./DiscoverySectionCard";
 import { DiscoveryProgressBar } from "./DiscoveryProgressBar";
 import { DiscoveryResetDialog } from "./DiscoveryResetDialog";
 import { DiscoveryExportActions } from "./DiscoveryExportActions";
+import { DiscoveryEditLink } from "./DiscoveryEditLink";
+import { DiscoveryIdentityDialog } from "./DiscoveryIdentityDialog";
 
 function formatDate(iso?: string) {
   if (!iso) return "Todavía sin actividad";
@@ -19,10 +22,12 @@ function formatDate(iso?: string) {
 }
 
 export function DiscoveryDashboard() {
+  const router = useRouter();
   const state = useDiscoveryState();
+  const [showIdentityDialog, setShowIdentityDialog] = useState(false);
   const progress = useMemo(
-    () => computeProgress(state.answers, state.confirmedSections, state.recommendationDecisions),
-    [state.answers, state.confirmedSections, state.recommendationDecisions]
+    () => computeProgress(state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections),
+    [state.answers, state.confirmedSections, state.recommendationDecisions, state.reopenedSections]
   );
   const recommendations = useMemo(
     () => computeRecommendations(state.answers, state.recommendationDecisions).filter((r) => r.detected),
@@ -37,15 +42,19 @@ export function DiscoveryDashboard() {
   const nextSection = useMemo(() => {
     const sorted = discoverySections.slice().sort((a, b) => a.order - b.order);
     const sectionProgress = new Map(progress.bySection.map((s) => [s.sectionId, s]));
-    return (
-      sorted.find((s) => {
-        const p = sectionProgress.get(s.id);
-        return p && p.status !== "confirmada" && p.status !== "lista_para_revisar";
-      }) ?? sorted[0]
-    );
-  }, [progress.bySection]);
+    const isOpen = (id: string) => {
+      const p = sectionProgress.get(id);
+      return Boolean(p && p.status !== "confirmada" && p.status !== "lista_para_revisar");
+    };
+    // Si Gonzalo quedó a mitad de una sección, "Continuar consulta" lo retoma exactamente ahí
+    // en vez de mandarlo siempre a la primera sección pendiente por orden.
+    const resumed = discoverySections.find((s) => s.slug === state.currentSectionSlug);
+    if (resumed && isOpen(resumed.id)) return resumed;
+    return sorted.find((s) => isOpen(s.id)) ?? sorted[0];
+  }, [progress.bySection, state.currentSectionSlug]);
 
   const hasStarted = progress.answeredQuestions > 0;
+  const hasIdentity = Boolean(state.intervieweeName?.trim() && state.companyName?.trim());
   const criticalPendingTop = exportData.pending.filter((p) => p.importance === "critico").slice(0, 5);
   const complementaryPending = exportData.pending.filter((p) => p.importance === "complementario").slice(0, 4);
 
@@ -66,9 +75,14 @@ export function DiscoveryDashboard() {
           <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row lg:flex-col">
             <Link
               href={`/app/relevamiento/${nextSection.slug}`}
+              onClick={(e) => {
+                if (hasIdentity) return;
+                e.preventDefault();
+                setShowIdentityDialog(true);
+              }}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-opgreen-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-opgreen-700"
             >
-              {hasStarted ? "Continuar relevamiento" : "Iniciar modo reunión"}
+              {hasStarted ? "Continuar consulta" : "Iniciar consulta"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -130,9 +144,12 @@ export function DiscoveryDashboard() {
               {criticalPendingTop.length === 0 ? (
                 <p className="text-slate-400">No hay críticas pendientes.</p>
               ) : (
-                <ul className="list-inside list-disc space-y-0.5 text-slate-600">
+                <ul className="space-y-1 text-slate-600">
                   {criticalPendingTop.map((p) => (
-                    <li key={p.id}>{p.question}</li>
+                    <li key={p.id} className="flex items-center justify-between gap-2">
+                      <span>{p.question}</span>
+                      <DiscoveryEditLink questionId={p.id} label="Responder" />
+                    </li>
                   ))}
                 </ul>
               )}
@@ -142,9 +159,12 @@ export function DiscoveryDashboard() {
               {complementaryPending.length === 0 ? (
                 <p className="text-slate-400">Nada complementario pendiente.</p>
               ) : (
-                <ul className="list-inside list-disc space-y-0.5 text-slate-600">
+                <ul className="space-y-1 text-slate-600">
                   {complementaryPending.map((p) => (
-                    <li key={p.id}>{p.question}</li>
+                    <li key={p.id} className="flex items-center justify-between gap-2">
+                      <span>{p.question}</span>
+                      <DiscoveryEditLink questionId={p.id} label="Responder" />
+                    </li>
                   ))}
                 </ul>
               )}
@@ -169,7 +189,20 @@ export function DiscoveryDashboard() {
           <DiscoveryResetDialog onConfirm={discoveryActions.resetDemo} />
           <DiscoveryExportActions data={exportData} />
         </div>
+        <p className="mt-2 text-[11px] text-slate-400">
+          Usá esta opción antes de comenzar la consulta real con Gonzalo si realizaste pruebas anteriormente.
+        </p>
       </section>
+
+      <DiscoveryIdentityDialog
+        open={showIdentityDialog}
+        onClose={() => setShowIdentityDialog(false)}
+        onSubmit={(identity) => {
+          discoveryActions.setIdentity(identity);
+          setShowIdentityDialog(false);
+          router.push(`/app/relevamiento/${nextSection.slug}`);
+        }}
+      />
     </div>
   );
 }

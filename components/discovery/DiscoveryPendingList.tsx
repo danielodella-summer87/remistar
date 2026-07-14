@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle, FileWarning } from "lucide-react";
-import { useDiscoveryState } from "@/lib/discovery/store";
+import Link from "next/link";
+import { AlertTriangle, FileWarning, RotateCcw, ShieldCheck } from "lucide-react";
+import { useDiscoveryState, discoveryActions } from "@/lib/discovery/store";
 import { buildExportData, buildResponsibleGroups } from "@/lib/discovery/export";
 import { DISCOVERY_RESPONSIBLE_LABELS } from "@/lib/discovery/types";
+import { discoverySections } from "@/lib/discovery/sections";
 import { DiscoveryContradictionCard } from "./DiscoveryContradictionCard";
+import { DiscoveryEditLink } from "./DiscoveryEditLink";
 
 /** Fuente: docs/discovery/REMISTAR-DISCOVERY-1-cuestionario-operativo.md — "Material a solicitar (resumen)". */
 const MATERIAL_A_SOLICITAR = [
@@ -28,9 +31,38 @@ export function DiscoveryPendingList() {
   const criticalPending = data.pending.filter((p) => p.importance === "critico" && p.status === "sin_responder");
   const requiresReview = data.pending.filter((p) => p.status === "requiere_revision");
   const pendingRecommendations = data.recommendations.filter((r) => r.decision === "sugerida");
+  const reopenedSections = data.progress.bySection
+    .filter((s) => s.status === "reabierta")
+    .map((s) => ({ section: discoverySections.find((sec) => sec.id === s.sectionId)!, progress: s }))
+    .filter((x) => x.section);
 
   return (
     <div className="space-y-8">
+      {reopenedSections.length > 0 && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-amber-900">
+            <RotateCcw className="h-4 w-4" /> Secciones reabiertas pendientes de reconfirmar ({reopenedSections.length})
+          </h2>
+          <ul className="space-y-2">
+            {reopenedSections.map(({ section }) => (
+              <li key={section.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-inset ring-amber-100">
+                <Link href={`/app/relevamiento/${section.slug}`} className="text-sm font-medium text-amber-900 hover:underline">
+                  {section.title}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => discoveryActions.confirmSection(section.id, true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-opgreen-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-opgreen-700 hover:bg-opgreen-100"
+                >
+                  <ShieldCheck className="h-3 w-3" />
+                  Confirmar de nuevo
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
           <AlertTriangle className="h-4 w-4 text-amber-600" /> Preguntas críticas sin responder ({criticalPending.length})
@@ -38,10 +70,13 @@ export function DiscoveryPendingList() {
         {criticalPending.length === 0 ? (
           <p className="text-sm text-slate-400">No hay preguntas críticas sin responder.</p>
         ) : (
-          <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
+          <ul className="space-y-1.5 text-sm text-slate-700">
             {criticalPending.map((p) => (
-              <li key={p.id}>
-                <span className="text-slate-400">[{p.section}]</span> {p.question}
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <span className="text-slate-400">[{p.section}]</span> {p.question}
+                </span>
+                <DiscoveryEditLink questionId={p.id} label="Responder ahora" />
               </li>
             ))}
           </ul>
@@ -53,10 +88,13 @@ export function DiscoveryPendingList() {
         {requiresReview.length === 0 ? (
           <p className="text-sm text-slate-400">No hay preguntas marcadas para revisar.</p>
         ) : (
-          <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
+          <ul className="space-y-1.5 text-sm text-slate-700">
             {requiresReview.map((p) => (
-              <li key={p.id}>
-                <span className="text-slate-400">[{p.section}]</span> {p.question}
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <span className="text-slate-400">[{p.section}]</span> {p.question}
+                </span>
+                <DiscoveryEditLink questionId={p.id} label="Revisar esta respuesta" />
               </li>
             ))}
           </ul>
@@ -81,9 +119,16 @@ export function DiscoveryPendingList() {
         {pendingRecommendations.length === 0 ? (
           <p className="text-sm text-slate-400">No hay recomendaciones sin decidir.</p>
         ) : (
-          <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
+          <ul className="space-y-1.5 text-sm text-slate-700">
             {pendingRecommendations.map((r) => (
-              <li key={r.id}>{r.title}</li>
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>{r.title}</span>
+                <span className="flex flex-wrap gap-2">
+                  {r.questionIds.map((qid) => (
+                    <DiscoveryEditLink key={qid} questionId={qid} label="Revisar esta respuesta" />
+                  ))}
+                </span>
+              </li>
             ))}
           </ul>
         )}
@@ -110,9 +155,12 @@ export function DiscoveryPendingList() {
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   {DISCOVERY_RESPONSIBLE_LABELS[key as keyof typeof DISCOVERY_RESPONSIBLE_LABELS]} ({items.length})
                 </h3>
-                <ul className="list-inside list-disc space-y-1 text-xs text-slate-600">
+                <ul className="space-y-1.5 text-xs text-slate-600">
                   {items.map((item) => (
-                    <li key={item.id}>{item.question}</li>
+                    <li key={item.id} className="flex flex-wrap items-center justify-between gap-2">
+                      <span>{item.question}</span>
+                      <DiscoveryEditLink questionId={item.id} label="Responder" />
+                    </li>
                   ))}
                 </ul>
               </div>

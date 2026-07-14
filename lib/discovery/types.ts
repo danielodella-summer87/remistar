@@ -43,7 +43,7 @@ export const DISCOVERY_RESPONSIBLE_LABELS: Record<DiscoveryResponsible, string> 
 export type DiscoveryStatus = "sin_responder" | "respondida" | "requiere_revision" | "pendiente_confirmar";
 
 /** Estado agregado de una sección completa. */
-export type DiscoverySectionStatus = "no_iniciada" | "en_progreso" | "lista_para_revisar" | "confirmada" | "requiere_revision";
+export type DiscoverySectionStatus = "no_iniciada" | "en_progreso" | "lista_para_revisar" | "confirmada" | "requiere_revision" | "reabierta";
 
 // ---------------------------------------------------------------------------
 // Tipos de respuesta
@@ -156,6 +156,8 @@ export interface DiscoverySectionProgress {
   criticalPending: number;
   percent: number;
   status: DiscoverySectionStatus;
+  /** Fecha/hora del último "Reabrir sección", si la sección está reabierta o lo estuvo. */
+  reopenedAt?: string;
 }
 
 export interface DiscoveryProgress {
@@ -185,6 +187,7 @@ export interface DiscoveryRecommendation {
   why: string; // por qué importa
   proposal: string; // propuesta
   modules: string[]; // módulos afectados
+  questionIds: string[]; // preguntas cuya respuesta disparó la recomendación — para poder revisarlas/editarlas
   decision: DiscoveryRecommendationDecision;
 }
 

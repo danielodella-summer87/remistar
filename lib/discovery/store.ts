@@ -5,13 +5,33 @@ import type { DiscoveryAnswer, DiscoveryAnswerValue, DiscoveryStatus, DiscoveryR
 
 const STORAGE_KEY = "remistar:discovery:v1";
 
+/** Estado de sincronización de la última respuesta enviada a Supabase (independiente del guardado local). */
+export type DiscoverySyncStatus = "idle" | "syncing" | "synced" | "error";
+
 export interface DiscoveryState {
   version: 1;
   answers: Record<string, DiscoveryAnswer>;
   confirmedSections: Record<string, boolean>;
   recommendationDecisions: Record<string, DiscoveryRecommendationDecision>;
   meetingMode: boolean;
+  /** Última sección y pregunta donde estaba Gonzalo — permite retomar exactamente donde quedó. */
   currentSectionSlug?: string;
+  currentQuestionId?: string;
+  /** sectionId -> fecha/hora ISO del último "Reabrir sección". Se borra al volver a confirmar o marcar lista para revisar. */
+  reopenedSections: Record<string, string>;
+  /** id de la sesión de Discovery en Supabase (discovery_sessions.id). Ausente hasta la primera sincronización. */
+  sessionId?: string;
+  /** token opaco de recuperación de esa sesión (discovery_sessions.recovery_token). */
+  recoveryToken?: string;
+  /** Estado de la última sincronización con Supabase; no afecta al guardado local, que sigue siendo síncrono. */
+  syncStatus?: DiscoverySyncStatus;
+  /** Fecha/hora ISO de la última sincronización exitosa con Supabase. */
+  lastSyncedAt?: string;
+  /** Identidad real de quien está respondiendo, capturada una sola vez antes de la primera sesión remota. */
+  intervieweeName?: string;
+  companyName?: string;
+  email?: string;
+  phone?: string;
 }
 
 const DEFAULT_STATE: DiscoveryState = {
@@ -21,6 +41,16 @@ const DEFAULT_STATE: DiscoveryState = {
   recommendationDecisions: {},
   meetingMode: false,
   currentSectionSlug: undefined,
+  currentQuestionId: undefined,
+  reopenedSections: {},
+  sessionId: undefined,
+  recoveryToken: undefined,
+  syncStatus: "idle",
+  lastSyncedAt: undefined,
+  intervieweeName: undefined,
+  companyName: undefined,
+  email: undefined,
+  phone: undefined,
 };
 
 let cached: DiscoveryState | null = null;
@@ -62,6 +92,21 @@ export function useDiscoveryState(): DiscoveryState {
   return useSyncExternalStore(subscribe, read, getServerSnapshot);
 }
 
+/**
+ * true una vez que `useDiscoveryState()` ya devolvió el snapshot real de localStorage, no el snapshot
+ * vacío usado para la primera pasada de hidratación. Útil para recalcular una sola vez, después de
+ * hidratar, cualquier cosa que se haya resuelto con datos todavía vacíos (ej. preguntas condicionales
+ * cuya visibilidad depende de otra respuesta ya guardada).
+ */
+export function isHydratedDiscoveryState(state: DiscoveryState): boolean {
+  return state !== DEFAULT_STATE;
+}
+
+/** Lectura puntual del estado actual fuera de un componente React (para helpers de sincronización). */
+export function getDiscoveryStateSnapshot(): DiscoveryState {
+  return read();
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -98,9 +143,22 @@ export const discoveryActions = {
     write(upsertAnswer(read(), questionId, { note }));
   },
 
+  /** Marca la sección como confirmada o como lista para revisar. Cualquiera de las dos resuelve una reapertura pendiente. */
   confirmSection(sectionId: string, confirmed: boolean) {
     const state = read();
-    write({ ...state, confirmedSections: { ...state.confirmedSections, [sectionId]: confirmed } });
+    const reopenedSections = { ...state.reopenedSections };
+    delete reopenedSections[sectionId];
+    write({ ...state, confirmedSections: { ...state.confirmedSections, [sectionId]: confirmed }, reopenedSections });
+  },
+
+  /** Reabre una sección ya confirmada/lista para revisar sin tocar ninguna respuesta, nota o decisión. */
+  reopenSection(sectionId: string) {
+    const state = read();
+    write({
+      ...state,
+      confirmedSections: { ...state.confirmedSections, [sectionId]: false },
+      reopenedSections: { ...state.reopenedSections, [sectionId]: nowIso() },
+    });
   },
 
   decideRecommendation(recommendationId: string, decision: DiscoveryRecommendationDecision) {
@@ -115,11 +173,60 @@ export const discoveryActions = {
     write({ ...read(), meetingMode: enabled });
   },
 
-  setCurrentSection(slug: string) {
-    write({ ...read(), currentSectionSlug: slug });
+  /** Registra dónde quedó Gonzalo (sección + pregunta) para poder retomar exactamente ahí. No escribe si no cambió. */
+  setPosition(sectionSlug: string, questionId: string) {
+    const state = read();
+    if (state.currentSectionSlug === sectionSlug && state.currentQuestionId === questionId) return;
+    write({ ...state, currentSectionSlug: sectionSlug, currentQuestionId: questionId });
   },
 
   resetDemo() {
     write(DEFAULT_STATE);
   },
+
+  /** Asocia el estado local a una sesión real de Supabase, sin tocar respuestas ni posición. */
+  setSession(sessionId: string, recoveryToken: string) {
+    const state = read();
+    write({ ...state, sessionId, recoveryToken, syncStatus: "idle" });
+  },
+
+  /** Refleja el resultado de la última sincronización de una respuesta con Supabase. */
+  setSyncStatus(status: DiscoverySyncStatus, lastSyncedAt?: string) {
+    const state = read();
+    write({ ...state, syncStatus: status, lastSyncedAt: lastSyncedAt ?? state.lastSyncedAt });
+  },
+
+  /**
+   * Guarda la identidad real de quien responde (nombre y empresa obligatorios, email/teléfono
+   * opcionales). Strings vacíos o solo espacios se guardan como `undefined`, nunca como "".
+   */
+  setIdentity(identity: { intervieweeName?: string; companyName?: string; email?: string; phone?: string }) {
+    const state = read();
+    const clean = (value?: string) => {
+      const trimmed = value?.trim();
+      return trimmed ? trimmed : undefined;
+    };
+    write({
+      ...state,
+      intervieweeName: clean(identity.intervieweeName) ?? state.intervieweeName,
+      companyName: clean(identity.companyName) ?? state.companyName,
+      email: clean(identity.email) ?? state.email,
+      phone: clean(identity.phone) ?? state.phone,
+    });
+  },
 };
+
+/**
+ * Función central de guardado: vuelve a persistir en localStorage el estado que ya está en memoria.
+ * Como cada acción de arriba ya escribe de forma síncrona apenas ocurre el cambio, en el caso normal
+ * esto es un no-op — pero sirve como red de seguridad única para todos los caminos de salida de la
+ * pantalla (botón, navegación interna, cierre o recarga de pestaña) sin duplicar lógica en cada uno.
+ */
+export function flushDiscoveryChanges() {
+  if (typeof window === "undefined" || cached === null) return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+  } catch {
+    // localStorage no disponible — no hay nada más que hacer al cerrar la pestaña.
+  }
+}

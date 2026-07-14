@@ -1,5 +1,6 @@
 import { Sparkles, Check, X, Clock3 } from "lucide-react";
 import type { DiscoveryRecommendation, DiscoveryRecommendationDecision } from "@/lib/discovery/types";
+import { DiscoveryEditLink } from "./DiscoveryEditLink";
 
 const decisionLabels: Record<DiscoveryRecommendationDecision, string> = {
   sugerida: "Sugerida",
@@ -52,31 +53,39 @@ export function DiscoveryRecommendationCard({
         </div>
       </dl>
 
-      {onDecide && (
-        <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-          <button
-            type="button"
-            onClick={() => onDecide("aceptada")}
-            className="inline-flex items-center gap-1 rounded-lg border border-opgreen-300 bg-opgreen-50 px-2.5 py-1.5 text-xs font-medium text-opgreen-700 hover:bg-opgreen-100"
-          >
-            <Check className="h-3.5 w-3.5" /> Aceptar
-          </button>
-          <button
-            type="button"
-            onClick={() => onDecide("rechazada")}
-            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
-          >
-            <X className="h-3.5 w-3.5" /> Rechazar
-          </button>
-          <button
-            type="button"
-            onClick={() => onDecide("revisar_despues")}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-          >
-            <Clock3 className="h-3.5 w-3.5" /> Revisar después
-          </button>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <div className="flex flex-wrap gap-3">
+          {recommendation.questionIds.map((qid) => (
+            <DiscoveryEditLink key={qid} questionId={qid} label="Revisar esta respuesta" />
+          ))}
         </div>
-      )}
+
+        {onDecide && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onDecide("aceptada")}
+              className="inline-flex items-center gap-1 rounded-lg border border-opgreen-300 bg-opgreen-50 px-2.5 py-1.5 text-xs font-medium text-opgreen-700 hover:bg-opgreen-100"
+            >
+              <Check className="h-3.5 w-3.5" /> Aceptar
+            </button>
+            <button
+              type="button"
+              onClick={() => onDecide("rechazada")}
+              className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+            >
+              <X className="h-3.5 w-3.5" /> Rechazar
+            </button>
+            <button
+              type="button"
+              onClick={() => onDecide("revisar_despues")}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              <Clock3 className="h-3.5 w-3.5" /> Revisar después
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

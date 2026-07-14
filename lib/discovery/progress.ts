@@ -7,9 +7,11 @@ function sectionStatus(
   answered: number,
   total: number,
   hasRequiresReview: boolean,
-  confirmed: boolean
+  confirmed: boolean,
+  reopenedAt: string | undefined
 ): DiscoverySectionStatus {
   if (hasRequiresReview) return "requiere_revision";
+  if (reopenedAt) return "reabierta";
   if (answered === 0) return "no_iniciada";
   if (answered < total) return "en_progreso";
   if (confirmed) return "confirmada";
@@ -19,7 +21,8 @@ function sectionStatus(
 export function computeSectionProgress(
   sectionId: string,
   answers: AnswersMap,
-  confirmedSections: Record<string, boolean>
+  confirmedSections: Record<string, boolean>,
+  reopenedSections: Record<string, string> = {}
 ): DiscoverySectionProgress {
   const questions = getQuestionsBySection(sectionId).filter((q) => isQuestionVisible(q, answers));
   const total = questions.length;
@@ -38,6 +41,7 @@ export function computeSectionProgress(
   }
 
   const percent = total === 0 ? 0 : Math.round((answered / total) * 100);
+  const reopenedAt = reopenedSections[sectionId];
 
   return {
     sectionId,
@@ -45,24 +49,28 @@ export function computeSectionProgress(
     answered,
     criticalPending,
     percent,
-    status: sectionStatus(answered, total, hasRequiresReview, Boolean(confirmedSections[sectionId])),
+    status: sectionStatus(answered, total, hasRequiresReview, Boolean(confirmedSections[sectionId]), reopenedAt),
+    reopenedAt,
   };
 }
 
 export function computeProgress(
   answers: AnswersMap,
   confirmedSections: Record<string, boolean>,
-  recommendationDecisions: Record<string, DiscoveryRecommendationDecision>
+  recommendationDecisions: Record<string, DiscoveryRecommendationDecision>,
+  reopenedSections: Record<string, string> = {}
 ): DiscoveryProgress {
   const bySection = discoverySections
     .slice()
     .sort((a, b) => a.order - b.order)
-    .map((section) => computeSectionProgress(section.id, answers, confirmedSections));
+    .map((section) => computeSectionProgress(section.id, answers, confirmedSections, reopenedSections));
 
   const totalQuestions = bySection.reduce((sum, s) => sum + s.total, 0);
   const answeredQuestions = bySection.reduce((sum, s) => sum + s.answered, 0);
   const criticalPending = bySection.reduce((sum, s) => sum + s.criticalPending, 0);
-  const sectionsCompleted = bySection.filter((s) => s.status === "confirmada" || s.status === "lista_para_revisar").length;
+  const sectionsCompleted = bySection.filter(
+    (s) => s.status === "confirmada" || s.status === "lista_para_revisar" || s.status === "reabierta"
+  ).length;
 
   const contradictions = computeContradictions(answers).filter((c) => c.detected);
   const recommendations = computeRecommendations(answers, recommendationDecisions).filter(

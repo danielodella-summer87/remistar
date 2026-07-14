@@ -183,6 +183,7 @@ export function discoverySectionStatusMeta(status: DiscoverySectionStatus): Stat
     lista_para_revisar: { label: "Lista para revisar", tone: "brand" },
     confirmada: { label: "Confirmada", tone: "success" },
     requiere_revision: { label: "Requiere revisión", tone: "danger" },
+    reabierta: { label: "Reabierta", tone: "warning" },
   };
   return map[status];
 }

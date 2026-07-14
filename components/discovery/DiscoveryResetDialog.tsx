@@ -14,7 +14,7 @@ export function DiscoveryResetDialog({ onConfirm }: { onConfirm: () => void }) {
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
       >
         <RotateCcw className="h-3.5 w-3.5" />
-        Restablecer relevamiento demo
+        Restablecer relevamiento
       </button>
 
       {open && (
@@ -22,11 +22,11 @@ export function DiscoveryResetDialog({ onConfirm }: { onConfirm: () => void }) {
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
             <div className="mb-3 flex items-center gap-2 text-amber-600">
               <TriangleAlert className="h-5 w-5" />
-              <h3 className="text-sm font-semibold text-slate-900">Restablecer relevamiento demo</h3>
+              <h3 className="text-sm font-semibold text-slate-900">Restablecer relevamiento</h3>
             </div>
             <p className="text-sm text-slate-600">
-              Se van a borrar todas las respuestas, notas y decisiones cargadas en este navegador. Esta acción no afecta
-              ningún otro dato demo de la aplicación y no se puede deshacer.
+              Se eliminarán todas las respuestas, notas y decisiones guardadas en este dispositivo. Esta acción no se puede
+              deshacer.
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button

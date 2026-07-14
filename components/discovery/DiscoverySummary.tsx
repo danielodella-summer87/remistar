@@ -1,12 +1,17 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { RotateCcw, ShieldCheck } from "lucide-react";
 import { useDiscoveryState } from "@/lib/discovery/store";
 import { buildExportData } from "@/lib/discovery/export";
+import { discoverySections } from "@/lib/discovery/sections";
 import { DiscoveryExportActions } from "./DiscoveryExportActions";
 import { DiscoveryRecommendationCard } from "./DiscoveryRecommendationCard";
 import { DiscoveryContradictionCard } from "./DiscoveryContradictionCard";
 import { DiscoveryNotes } from "./DiscoveryNotes";
+import { DiscoveryEditLink } from "./DiscoveryEditLink";
+import { DiscoverySectionStatusBadge } from "./DiscoveryStatusBadge";
 import { discoveryActions } from "@/lib/discovery/store";
 
 type FilterKey = "confirmados" | "pendientes" | "supuestos" | "criticos" | "recomendaciones" | "contradicciones";
@@ -37,6 +42,10 @@ export function DiscoverySummary() {
   const show = (key: FilterKey) => active.size === 0 || active.has(key);
   const criticalPending = data.pending.filter((p) => p.importance === "critico");
   const modulesAffected = Array.from(new Set(data.recommendations.flatMap((r) => r.modules))).sort();
+  const completedSections = data.progress.bySection
+    .filter((s) => s.status === "confirmada" || s.status === "reabierta" || s.status === "lista_para_revisar")
+    .map((s) => ({ section: discoverySections.find((sec) => sec.id === s.sectionId)!, progress: s }))
+    .filter((x) => x.section);
 
   return (
     <div className="space-y-8">
@@ -67,6 +76,47 @@ export function DiscoverySummary() {
         )}
       </SummarySection>
 
+      {/* Estado de las secciones: confirmar no bloquea, reabrir se puede desde acá */}
+      <SummarySection title="Estado de las secciones" count={completedSections.length}>
+        {completedSections.length === 0 ? (
+          <Empty text="Todavía no hay secciones confirmadas ni listas para revisar." />
+        ) : (
+          <ul className="space-y-2">
+            {completedSections.map(({ section, progress }) => (
+              <li key={section.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Link href={`/app/relevamiento/${section.slug}`} className="text-sm font-medium text-slate-800 hover:underline">
+                    {section.title}
+                  </Link>
+                  <DiscoverySectionStatusBadge status={progress.status} />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {progress.status === "reabierta" ? (
+                    <button
+                      type="button"
+                      onClick={() => discoveryActions.confirmSection(section.id, true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-opgreen-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-opgreen-700 hover:bg-opgreen-100"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      Confirmar de nuevo
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => discoveryActions.reopenSection(section.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reabrir sección
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SummarySection>
+
       {/* 2. Procesos confirmados */}
       {show("confirmados") && (
         <SummarySection title="Procesos confirmados" count={data.confirmed.length}>
@@ -80,9 +130,16 @@ export function DiscoverySummary() {
           {data.decisionsAccepted.length === 0 ? (
             <Empty text="Todavía no se aceptó ninguna recomendación." />
           ) : (
-            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
+            <ul className="space-y-1.5 text-sm text-slate-700">
               {data.decisionsAccepted.map((d) => (
-                <li key={d.id}>{d.title}</li>
+                <li key={d.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>{d.title}</span>
+                  <span className="flex flex-wrap gap-2">
+                    {d.questionIds.map((qid) => (
+                      <DiscoveryEditLink key={qid} questionId={qid} label="Revisar esta respuesta" />
+                    ))}
+                  </span>
+                </li>
               ))}
             </ul>
           )}
@@ -95,10 +152,13 @@ export function DiscoverySummary() {
           {data.assumptions.length === 0 ? (
             <Empty text="No hay supuestos pendientes de confirmar." />
           ) : (
-            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
+            <ul className="space-y-1.5 text-sm text-slate-700">
               {data.assumptions.map((a) => (
-                <li key={`${a.section}-${a.question}`}>
-                  <span className="text-slate-400">[{a.section}]</span> {a.question}
+                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    <span className="text-slate-400">[{a.section}]</span> {a.question}
+                  </span>
+                  <DiscoveryEditLink questionId={a.id} label="Revisar esta respuesta" />
                 </li>
               ))}
             </ul>
@@ -112,11 +172,14 @@ export function DiscoverySummary() {
           {data.pending.length === 0 ? (
             <Empty text="No quedan preguntas pendientes." />
           ) : (
-            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
+            <ul className="space-y-1.5 text-sm text-slate-700">
               {(active.has("criticos") ? criticalPending : data.pending).map((p) => (
-                <li key={p.id}>
-                  <span className="text-slate-400">[{p.section}]</span> {p.question}{" "}
-                  <span className="text-[11px] text-amber-600">({p.importance})</span>
+                <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    <span className="text-slate-400">[{p.section}]</span> {p.question}{" "}
+                    <span className="text-[11px] text-amber-600">({p.importance})</span>
+                  </span>
+                  <DiscoveryEditLink questionId={p.id} label="Responder esta pregunta" />
                 </li>
               ))}
             </ul>
@@ -189,7 +252,7 @@ export function DiscoverySummary() {
           <li>Revisar con Gonzalo las preguntas críticas pendientes.</li>
           <li>Resolver las contradicciones detectadas antes de avanzar con el diseño de esos módulos.</li>
           <li>Aceptar o rechazar explícitamente cada recomendación sugerida.</li>
-          <li>Repetir este resumen en la próxima reunión para medir el avance.</li>
+          <li>Repetir este resumen en la próxima consulta para medir el avance.</li>
         </ul>
       </SummarySection>
     </div>
@@ -212,8 +275,11 @@ function FactList({ items }: { items: ReturnType<typeof buildExportData>["confir
   return (
     <ul className="space-y-1.5 text-sm text-slate-700">
       {items.map((item) => (
-        <li key={`${item.section}-${item.question}`}>
-          <span className="text-slate-400">[{item.section}]</span> <span className="font-medium">{item.question}:</span> {item.answer}
+        <li key={item.id} className="flex flex-wrap items-start justify-between gap-2">
+          <span>
+            <span className="text-slate-400">[{item.section}]</span> <span className="font-medium">{item.question}:</span> {item.answer}
+          </span>
+          <DiscoveryEditLink questionId={item.id} />
         </li>
       ))}
     </ul>

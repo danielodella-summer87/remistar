@@ -56,3 +56,20 @@ body {
   background-color: #c7ccd1;
   border-radius: 9999px;
 }
+
+/* Módulo de Relevamiento: indicador discreto de guardado automático (sin JS/estado, se re-dispara por remount vía key). */
+@keyframes discovery-saved-fade {
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-discovery-saved {
+  animation: discovery-saved-fade 1.8s ease-out forwards;
+}
